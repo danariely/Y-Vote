@@ -97,21 +97,25 @@
   .divider-line .lbl { font-size:10.5px; color:var(--warn); font-weight:700; text-transform:uppercase; letter-spacing:.3px; white-space:nowrap; }
 
   /* ranked list */
-  .rank-row { display:flex; align-items:center; gap:12px; padding:13px 4px; border-bottom:1px solid var(--line); }
-  .rank-row .rk { width:20px; color:var(--muted); font-weight:700; font-size:13px; }
+  .rank-row { display:flex; align-items:center; gap:10px; padding:13px 4px; border-bottom:1px solid var(--line); }
+  .rank-row .rk { width:18px; color:var(--muted); font-weight:700; font-size:13px; flex:none; }
   .rank-row .rp { flex:1; min-width:0; }
-  .rank-row .rp b { font-size:15px; display:block; }
-  .rank-row .rp a { font-size:12px; color:var(--accent); text-decoration:none; }
-  .rank-row .rp a:hover { text-decoration:underline; }
-  .rank-row .fit { font-weight:800; font-size:15px; }
+  .rank-row .rp b { font-size:15px; }
+  .rank-row .fit { font-weight:800; font-size:16px; flex:none; }
   .fit.good { color:var(--accent2); } .fit.bad { color:var(--warn); }
 
   /* schedule rows */
-  .sched-row { display:flex; align-items:center; gap:12px; padding:13px 4px; border-bottom:1px solid var(--line); }
+  .sched-row { display:flex; align-items:center; gap:9px; padding:13px 4px; border-bottom:1px solid var(--line); }
   .sched-row .info { flex:1; min-width:0; }
   .sched-row .info b { font-size:14px; } .sched-row .info .ld { font-size:12px; color:var(--muted); }
-  .sched-row .info a { font-size:12px; color:var(--accent); text-decoration:none; display:inline-block; margin-top:2px; }
-  .sched-row .info a:hover { text-decoration:underline; }
+
+  /* scorecard buttons */
+  .sc-link { display:inline-flex; align-items:center; gap:7px; background:rgba(108,92,231,.2); border:1px solid var(--accent); color:#d6cfff; font-size:14px; font-weight:600; padding:9px 14px; border-radius:11px; text-decoration:none; white-space:nowrap; flex:none; }
+  .sc-link:hover { background:rgba(108,92,231,.35); }
+  .sc-link svg { width:16px; height:16px; }
+  .sc-icon { display:inline-flex; align-items:center; justify-content:center; width:42px; height:40px; background:rgba(108,92,231,.2); border:1px solid var(--accent); color:#d6cfff; border-radius:10px; flex:none; text-decoration:none; }
+  .sc-icon:hover { background:rgba(108,92,231,.35); }
+  .sc-icon svg { width:19px; height:19px; }
   .stat { font-size:11px; font-weight:700; padding:5px 9px; border-radius:99px; text-align:center; line-height:1.2; white-space:nowrap; }
   .stat.sched { background:rgba(0,210,168,.16); border:1px solid var(--accent2); color:#bff7e9; }
   .stat.none  { background:rgba(255,255,255,.05); border:1px solid var(--line); color:var(--muted); }
@@ -202,6 +206,7 @@
     <p class="lede">The bigger the square, the more we care.</p>
     <div class="grid" id="bubbles"></div>
     <button class="btn block" style="margin-top:24px" onclick="show('rank')">See how the parties fit your values →</button>
+    <button class="btn ghost block" style="margin-top:10px" onclick="show('picker')">← Back</button>
   </section>
 
   <!-- PARTIES RANKED BY FIT -->
@@ -228,6 +233,7 @@
 
   <!-- SCORECARD (per party) -->
   <section class="card hide" id="scorecard">
+    <button class="btn ghost" id="scBack" style="margin-bottom:18px; padding:9px 16px;" onclick="show(scorecardReturn)">← Back</button>
     <div class="kicker">Scorecard</div>
     <h2 id="scTitle"></h2>
     <p class="lede" style="margin-bottom:14px">How well this party's values fit the values of the youth.</p>
@@ -236,7 +242,6 @@
       <div style="font-size:12px;color:var(--muted);margin-top:4px;">overall fit with youth values</div>
     </div>
     <div id="scList"></div>
-    <button class="btn ghost block" id="scBack" style="margin-top:20px" onclick="show(scorecardReturn)">← Back</button>
   </section>
 
   <!-- VOTING RECOMMENDATIONS -->
@@ -391,12 +396,16 @@ function showResults(){ if(selected.length + proposed.length === 0) return; buil
 /* ---- party ranking + divider ------------------------------------------ */
 function dividerHTML(){ return `<div class="divider-line"><span class="ln"></span><span class="lbl">↓ better off if NOT in government ↓</span><span class="ln"></span></div>`; }
 
+const SC_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M8 10h8M8 14h8M8 18h5"/></svg>`;
+function scCard(pi){ return `<a href="#" class="sc-link" onclick="openScorecard(${pi});return false;">${SC_SVG}Scorecard</a>`; }
+function scIcon(pi){ return `<a href="#" class="sc-icon" aria-label="View scorecard" onclick="openScorecard(${pi});return false;">${SC_SVG}</a>`; }
+
 function renderRank(){
   const list = rankedParties(); let html=''; let div=false;
   list.forEach((p,idx)=>{
     if(!div && p.fit<50){ html+=dividerHTML(); div=true; }
     const good = p.fit>=50;
-    html += `<div class="rank-row"><span class="rk">${idx+1}</span><span class="rp"><b>${p.nm}</b><a href="#" onclick="openScorecard(${p.i});return false;">View scorecard →</a></span><span class="fit ${good?'good':'bad'}">${p.fit}%</span></div>`;
+    html += `<div class="rank-row"><span class="rk">${idx+1}</span><span class="rp"><b>${p.nm}</b></span><span class="fit ${good?'good':'bad'}">${p.fit}%</span>${scCard(p.i)}</div>`;
   });
   document.getElementById('rankList').innerHTML = html;
 }
@@ -405,7 +414,7 @@ function renderSchedule(){
   const list = rankedParties(); let html=''; let div=false;
   list.forEach(p=>{
     if(!div && p.fit<50){ html+=dividerHTML(); div=true; }
-    html += `<div class="sched-row"><span class="info"><b>${p.nm}</b> <span class="ld">· ${p.leader}</span><br><a href="#" onclick="openScorecard(${p.i});return false;">View scorecard →</a></span>${STAT[p.status](p.date)}</div>`;
+    html += `<div class="sched-row"><span class="info"><b>${p.nm}</b> <span class="ld">· ${p.leader}</span></span>${STAT[p.status](p.date)}${scIcon(p.i)}</div>`;
   });
   document.getElementById('schedList').innerHTML = html;
 }
